@@ -69,11 +69,9 @@ extra-dependencies = [
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/onenoteextractor}"
 
-
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "none"
 dependencies = ["ruff~=0.5"]
-
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = []
@@ -133,3 +131,15 @@ pydocstyle = { convention = 'google' }
 
 [tool.ruff.lint.isort]
 known-first-party = ["onenoteextractor"]
+
+[tool.hatch.envs.default.env-vars]
+PIP_INDEX_URL = "https://artifactory.research.volexity.com/artifactory/api/pypi/pypi/simple"
+UV_INDEX_URL = "https://artifactory.research.volexity.com/artifactory/api/pypi/pypi/simple"
+
+[tool.hatch.envs.hatch-static-analysis.env-vars]
+PIP_INDEX_URL = "https://artifactory.research.volexity.com/artifactory/api/pypi/pypi/simple"
+UV_INDEX_URL = "https://artifactory.research.volexity.com/artifactory/api/pypi/pypi/simple"
+
+[tool.hatch.envs.hatch-test.env-vars]
+PIP_INDEX_URL = "https://artifactory.research.volexity.com/artifactory/api/pypi/pypi/simple"
+UV_INDEX_URL = "https://artifactory.research.volexity.com/artifactory/api/pypi/pypi/simple"
