@@ -1,0 +1,19 @@
+Source: python3-onenoteextractor
+Maintainer: Threat Intel Team <threatintel@volexity.com>
+Homepage: https://gitlab.research.volexity.com/threat-intel
+Section: python
+Priority: optional
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-hatchling,
+               python3-hatch-vcs,
+Standards-Version: 4.1.1
+Vcs-Git: https://gitlab.research.volexity.com/threat-intel/one-extract.git
+Vcs-Browser: https://gitlab.research.volexity.com/threat-intel/one-extract
+
+Package: python3-onenoteextractor
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: Simple extractor for OneNote files.

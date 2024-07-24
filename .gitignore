@@ -8,3 +8,18 @@
 __pycache__/
 _version.py
 dist/
+
+# Debian
+*.build
+*.buildinfo
+*.changes
+*.deb
+*.debhelper
+*.dsc
+*.log
+*.substvars
+*.tar.gz
+.pybuild
+debhelper-build-stamp
+debian/files
+debian/*/

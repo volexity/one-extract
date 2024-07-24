@@ -1,5 +1,7 @@
 # OneNoteExtractor
 
+> This is a mirror of https://github.com/volexity/one-extract and only exists for CI/CD purposes. Please commit changes upstream.
+
 This is a quick Python script for extracting files and metadata from `.one` files. At the time of the creation (2023-01-20) of this script there appear to be no Python scripts that can extract files or metadata from objects
 
 ## Installation
