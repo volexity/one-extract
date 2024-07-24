@@ -3,15 +3,15 @@
 
 """Quick extractor for OneNote files, allowing for programmatic extraction of subfiles."""
 
-# builtins
-from datetime import datetime, timedelta
+from __future__ import annotations
+
 import base64
-import logging
-from io import BytesIO
 import json
+import logging
 import re
 import struct
-import traceback
+from datetime import datetime, timedelta, timezone
+from io import BytesIO
 from typing import Iterator
 from xml.dom.minidom import parseString
 
@@ -21,8 +21,8 @@ from msoffcrypto.method.ecma376_agile import ECMA376Agile
 # locals
 from .enc import decrypt
 
-EMBEDDED_FILE_MAGIC = b"\xe7\x16\xe3\xbd\x65\x26\x11\x45\xa4\xc4\x8d\x4d\x0b\x7a\x9e\xac"  # noqa E501
-TITLE_MAGIC = b"\xf3\x1c\x00\x1c\x30\x1c\x00\x1c\xff\x1d\x00\x14\x82\x1d\x00\x14"  # noqa E501
+EMBEDDED_FILE_MAGIC = b"\xe7\x16\xe3\xbd\x65\x26\x11\x45\xa4\xc4\x8d\x4d\x0b\x7a\x9e\xac"  # E501
+TITLE_MAGIC = b"\xf3\x1c\x00\x1c\x30\x1c\x00\x1c\xff\x1d\x00\x14\x82\x1d\x00\x14"  # E501
 HEADER = b"\xe4\x52\x5c\x7b\x8c\xd8\xa7\x4d\xae\xb1\x53\x78\xd0\x29\x96\xd3"
 ENC_ONENOTE_MARKER = b"http://schemas.microsoft.com/office/2006/keyEncryptor/password"
 
@@ -46,22 +46,24 @@ ENC_ONENOTE_MARKER = b"http://schemas.microsoft.com/office/2006/keyEncryptor/pas
 
 logger = logging.getLogger(__name__)
 
-class OneNoteExtractorException(Exception):
+
+class OneNoteExtractorError(Exception):
     """Custom exception handler for OneNoteExtractor."""
 
-    pass
 
-
-class OneNoteMetadataObject(object):
+class OneNoteMetadataObject:
     """Object to represent OneNoteMetadata components."""
 
-    def __init__(self,
-                 object_id: int,
-                 offset: int,
-                 title_size: int,
-                 title: str,
-                 creation_date: datetime,
-                 last_modification_date: datetime) -> None:
+    def __init__(
+        self,
+        object_id: int,
+        offset: int,
+        title_size: int,
+        title: str,
+        creation_date: datetime,
+        last_modification_date: datetime | None,
+    ) -> None:
+        """Initialise the OneNoteMetadataObject."""
         self.object_id = object_id
         self.title_size = title_size
         self.offset = offset
@@ -79,17 +81,16 @@ class OneNoteMetadataObject(object):
         r = {}
         for k, v in self.__dict__.items():
             if isinstance(v, datetime):
-                v = v.strftime('%Y-%m-%dT%H:%M:%SZ')
-            r[k] = v
+                r[k] = v.strftime("%Y-%m-%dT%H:%M:%SZ")
+            else:
+                r[k] = v
         return r
 
 
 class OneNoteExtractor:
     """Simple OneNoteExtractor class to assist in extraction of embedded files."""
 
-    def __init__(self,
-                 data: bytes,
-                 password: str = None) -> None:
+    def __init__(self, data: bytes, password: str | None = None) -> None:
         """Init a OneNoteExtractor object.
 
         :param data: file data from a .one file
@@ -100,19 +101,17 @@ class OneNoteExtractor:
         self.enc_info = None
         self.is_valid = self._is_valid()
         if self.is_valid is False:
-            raise OneNoteExtractorException("Invalid OneNote file encountered")
+            msg = "Invalid OneNote file encountered"
+            raise OneNoteExtractorError(msg)
         if self._is_password_protected():
             if not password:
-                raise OneNoteExtractorException("PasswordProtected OneNote file encountered but no"
-                                                " password was supplied.")
+                msg = "PasswordProtected OneNote file encountered but no password was supplied."
+                raise OneNoteExtractorError(msg)
             self.enc_info = self.derive_enc_info(password)
 
     def _is_valid(self) -> bool:
         """Check if the first 16 bytes in `self.data` match known OneNote file header structure."""
-        if self.data[0:16] == HEADER:
-            return True
-        else:
-            return False
+        return self.data[0:16] == HEADER
 
     def _is_password_protected(self) -> bool:
         """Check the first megabyte of data for indicators that the file is password protected.
@@ -121,9 +120,7 @@ class OneNoteExtractor:
             bool: _description_
         """
         # !TODO - this is a brittle check that probably could be improved.
-        if ENC_ONENOTE_MARKER in self.data[0:1000000]:
-            return True
-        return False
+        return ENC_ONENOTE_MARKER in self.data[0:1000000]
 
     def _get_time(self, date: bytes) -> datetime:
         """Convert byte representation of datetime to python datetime object.
@@ -135,23 +132,24 @@ class OneNoteExtractor:
             datetime: Converted datetime.
         """
         i_value = struct.unpack("<Q", bytearray(date))[0]
-        h_value = datetime(1601, 1, 1) + timedelta(microseconds=i_value / 10)
-        return h_value
+        return datetime(1601, 1, 1, tzinfo=timezone.utc) + timedelta(microseconds=i_value / 10)
 
-    def _decrypt_embedded_object(self, blob: bytes):
+    def _decrypt_embedded_object(self, blob: bytes) -> bytes:
         """Decrypt an embedded object `blob` using self.enc_info."""
         # If this is called enc_info should be populated, but we'll check just incase.
         if not self.enc_info:
-            raise OneNoteExtractorException("Unreachable code reached")
+            msg = "Unreachable code reached"
+            raise OneNoteExtractorError(msg)
         buf = BytesIO(blob)
-        obuf = decrypt(key=self.enc_info['secret_key'],
-                       keyDataSalt=self.enc_info["keyDataSalt"],
-                       hashAlgorithm=self.enc_info["keyDataHashAlgorithm"],
-                       ibuf=buf)
+        obuf = decrypt(
+            key=self.enc_info["secret_key"],
+            key_data_salt=self.enc_info["keyDataSalt"],
+            hash_algorithm=self.enc_info["keyDataHashAlgorithm"],
+            ibuf=buf,
+        )
         return obuf[8:]
 
-    def derive_enc_info(self,
-                        password: str) -> dict:
+    def derive_enc_info(self, password: str) -> dict:
         """Derive the encryption info required to decrypt embedded objects.
 
         Args:
@@ -166,48 +164,50 @@ class OneNoteExtractor:
         """
         # Find the XML blob containing encryption parameters
         match = re.search(pattern=b"<encryption xmlns=.*</encryption>", string=self.data)
-        enc_config = match.group()
+        enc_config = str(match.group()) if match else ""
 
         # Parse the blob and read key parameters
-        xml = parseString(enc_config)
-        keyData = xml.getElementsByTagName("keyData")[0]
-        keyDataSalt = base64.b64decode(keyData.getAttribute("saltValue"))
-        keyDataHashAlgorithm = keyData.getAttribute("hashAlgorithm")
+        xml = parseString(enc_config)  # noqa: S318
+        key_data = xml.getElementsByTagName("keyData")[0]
+        key_data_salt = base64.b64decode(key_data.getAttribute("saltValue"))
+        key_data_hash_algorithm = key_data.getAttribute("hashAlgorithm")
 
-        password_node = xml.getElementsByTagNameNS("http://schemas.microsoft.com/office/2006/keyEncryptor/password", "encryptedKey")[0]  # noqa:E501
-        spinValue = int(password_node.getAttribute("spinCount"))
-        encryptedKeyValue = base64.b64decode(password_node.getAttribute("encryptedKeyValue"))
-        encryptedVerifierHashInput = base64.b64decode(password_node.getAttribute("encryptedVerifierHashInput"))  # noqa:E501
-        encryptedVerifierHashValue = base64.b64decode(password_node.getAttribute("encryptedVerifierHashValue"))  # noqa:E501
-        passwordSalt = base64.b64decode(password_node.getAttribute("saltValue"))
-        passwordHashAlgorithm = password_node.getAttribute("hashAlgorithm")
-        passwordKeyBits = int(password_node.getAttribute("keyBits"))
+        password_node = xml.getElementsByTagNameNS(
+            "http://schemas.microsoft.com/office/2006/keyEncryptor/password", "encryptedKey"
+        )[0]
+        spin_value = int(password_node.getAttribute("spinCount"))
+        encrypted_key_value = base64.b64decode(password_node.getAttribute("encryptedKeyValue"))
+        encrypted_verifier_hash_input = base64.b64decode(password_node.getAttribute("encryptedVerifierHashInput"))
+        encrypted_verifier_hash_value = base64.b64decode(password_node.getAttribute("encryptedVerifierHashValue"))
+        password_salt = base64.b64decode(password_node.getAttribute("saltValue"))
+        password_hash_algorithm = password_node.getAttribute("hashAlgorithm")
+        password_key_bits = int(password_node.getAttribute("keyBits"))
 
         verified = ECMA376Agile.verify_password(
             password,
-            passwordSalt,
-            passwordHashAlgorithm,
-            encryptedVerifierHashInput,
-            encryptedVerifierHashValue,
-            spinValue,
-            passwordKeyBits,
+            password_salt,
+            password_hash_algorithm,
+            encrypted_verifier_hash_input,
+            encrypted_verifier_hash_value,
+            spin_value,
+            password_key_bits,
         )
         if verified:
             secret_key = ECMA376Agile.makekey_from_password(
                 password,
-                passwordSalt,
-                passwordHashAlgorithm,
-                encryptedKeyValue,
-                spinValue,
-                passwordKeyBits,
+                password_salt,
+                password_hash_algorithm,
+                encrypted_key_value,
+                spin_value,
+                password_key_bits,
             )
             return {
-                'secret_key': secret_key,
-                'keyDataSalt': keyDataSalt,
-                'keyDataHashAlgorithm': keyDataHashAlgorithm,
+                "secret_key": secret_key,
+                "keyDataSalt": key_data_salt,
+                "keyDataHashAlgorithm": key_data_hash_algorithm,
             }
-        raise OneNoteExtractorException("Decryption didn't work - wrong password supplied? "
-                                        f"Supplied password was: {password}")
+        msg = f"Decryption didn't work - wrong password supplied? Supplied password was: {password}"
+        raise OneNoteExtractorError(msg)
 
     def extract_files(self) -> Iterator[bytes]:
         """Find embedded objects in .one files.
@@ -216,7 +216,7 @@ class OneNoteExtractor:
         """
         if self.is_valid is False:
             logger.error("Cannot extract files - header is invalid.")
-            return False
+            return
 
         match = re.finditer(EMBEDDED_FILE_MAGIC, self.data, re.DOTALL)
         if match:
@@ -225,10 +225,10 @@ class OneNoteExtractor:
                 for m in match:
                     counter += 1
                     size_offset = m.start() + 16
-                    size = self.data[size_offset:size_offset + 4]
+                    size = self.data[size_offset : size_offset + 4]
                     size_bytes = bytearray(size)
                     i_size = struct.unpack("<I", size_bytes)[0]
-                    blob = self.data[m.start() + 36: m.start() + 36 + i_size]
+                    blob = self.data[m.start() + 36 : m.start() + 36 + i_size]
                     if self.enc_info:
                         # msoffcrypto-tool expects the blob to be of format
                         # [4 bytes of size] [4 unknown bytes] [ data]
@@ -238,16 +238,12 @@ class OneNoteExtractor:
                         yield self._decrypt_embedded_object(size_bytes + b"\x00\x00\x00\x00" + blob)
                     else:
                         yield blob
-                logger.debug(f"{counter} files extracted.")
-                return
-            except Exception as e:
-                logger.error(f"Error while parsing the file: {e}.")
-                if logger.getEffectiveLevel() == logging.DEBUG:
-                    traceback.print_exc()
-                return
+                logger.debug("%s files extracted.", counter)
+            except Exception:
+                logger.exception("Error while parsing the file")
         else:
             logger.debug("No embedded files found.")
-            return
+        return
 
     def extract_meta(self) -> Iterator[OneNoteMetadataObject]:
         """Extract metadata from embedded objects in .one files.
@@ -256,49 +252,49 @@ class OneNoteExtractor:
         """
         if self.enc_info:
             logger.error("Unable to extract metadata from encrypted .one files.")
-            return []
+            return
         match = re.finditer(TITLE_MAGIC, self.data, re.DOTALL)
-        ret = []
         if match:
             for index, m in enumerate(match):
                 try:
                     offset = m.start() - 4
-                    adjust = self.data[offset + 2:offset + 4]
+                    adjust = self.data[offset + 2 : offset + 4]
                     i_adjustment = struct.unpack("<H", bytearray(adjust))[0]
                     size_offset = offset + 4 + (4 * i_adjustment)
-                    size = self.data[size_offset:size_offset + 4]
+                    size = self.data[size_offset : size_offset + 4]
                     i_size = struct.unpack("<I", bytearray(size))[0]
-                    logger.debug(f"title offset: {size_offset}")
-                    title_str = self.data[size_offset + 4:size_offset + 4 + i_size].decode()
-                    creatDate_offset = size_offset + 4 + i_size + 32
-                    creatDate = self.data[creatDate_offset:creatDate_offset + 8]
-                    h_createDate = self._get_time(creatDate)
-                    cpt = creatDate_offset + 16
+                    logger.debug("title offset: %s", size_offset)
+                    title_str = self.data[size_offset + 4 : size_offset + 4 + i_size].decode()
+                    create_date_offset = size_offset + 4 + i_size + 32
+                    create_date = self.data[create_date_offset : create_date_offset + 8]
+                    h_create_date = self._get_time(create_date)
+                    cpt = create_date_offset + 16
                     valid = False
-                    while cpt < creatDate_offset + 100:
-                        if self.data[cpt:cpt + 6] == b"\x01\x01\x00\x00\x00\x00":
+                    while cpt < create_date_offset + 100:
+                        if self.data[cpt : cpt + 6] == b"\x01\x01\x00\x00\x00\x00":
                             valid = True
                             break
-                        if self.data[cpt:cpt + 6] == b"\x01\x00\x00\x00\x00\x00":
+                        if self.data[cpt : cpt + 6] == b"\x01\x00\x00\x00\x00\x00":
                             valid = True
                             break
                         cpt = cpt + 1
                     if valid:
-                        LastDate_offset = cpt - 7
-                        LastDate = self.data[LastDate_offset:LastDate_offset + 8]
+                        last_date_offset = cpt - 7
+                        last_date = self.data[last_date_offset : last_date_offset + 8]
                     else:
-                        LastDate = None
-                    h_LastDate = None
-                    if LastDate:
-                        h_LastDate = self._get_time(LastDate)
-                    yield OneNoteMetadataObject(object_id=index,
-                                                offset=offset,
-                                                title_size=i_size,
-                                                title=title_str.replace("\x00", ""),
-                                                creation_date=h_createDate,
-                                                last_modification_date=h_LastDate)
+                        last_date = None
+                    h_last_date = None
+                    if last_date:
+                        h_last_date = self._get_time(last_date)
+                    yield OneNoteMetadataObject(
+                        object_id=index,
+                        offset=offset,
+                        title_size=i_size,
+                        title=title_str.replace("\x00", ""),
+                        creation_date=h_create_date,
+                        last_modification_date=h_last_date,
+                    )
 
-                except Exception as e:
-                    logger.error(f"Error while parsing object {cpt}")
-                    logger.error(f"Error: {e}.")
-        return ret
+                except Exception:
+                    logger.exception("Error while parsing object %s", cpt)
+        return
