@@ -31,6 +31,11 @@ dependencies = [
 [project.scripts]
 one-extract = "onenoteextractor.cli:run"
 
+[project.urls]
+Documentation = "https://github.com/volexity/one-extract/blob/main/README.md"
+Issues = "https://github.com/volexity/one-extract/issues"
+Source = "https://github.com/volexity/one-extract"
+
 [envs.hatch-static-analysis]
 config-path = "none"
 
