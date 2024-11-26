@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from src.one_extract import OneNoteExtractor
+from one_extract import OneNoteExtractor
 
 
 def test_extract_example() -> None:

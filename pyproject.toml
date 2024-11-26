@@ -42,7 +42,7 @@ Source = "https://github.com/volexity/one-extract"
 config-path = "none"
 
 [tool.coverage.paths]
-intel_api = ["src/one_extract", "*/one-extract/src/one_extract"]
+one_extract = ["src/one_extract", "*/one-extract/src/one_extract"]
 
 [tool.coverage.report]
 exclude_lines = [

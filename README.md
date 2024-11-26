@@ -1,12 +1,12 @@
-# OneNoteExtractor
+# OneNote Extractor
 
 This is a quick Python script for extracting files and metadata from `.one` files. At the time of the creation (2023-01-20) of this script there appear to be no Python scripts that can extract files or metadata from objects
 
 ## Installation
 
-To install OneNoteExtractor, we recommend using something like this:
+To install OneNote Extractor, we recommend using something like this:
 
-`cd /path/to/onenoteextractor/ && python -m pip install .`
+`python -m pip install one-extract`
 
 ## Usage as a library
 
