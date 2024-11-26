@@ -9,8 +9,7 @@ import sys
 import textwrap
 from pathlib import Path
 
-from . import OneNoteExtractor
-from ._version import __version__
+from . import OneNoteExtractor, __version__
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ def run() -> None:
     parser = argparse.ArgumentParser(
         description=textwrap.dedent(
             f"""
-            Volexity OneNoteExtractor | Extract metadata and/or files from OneNote files
+            Volexity OneNote Extractor | Extract metadata and/or files from OneNote files
             Version {__version__}
             https://www.volexity.com
             (C) 2023 Volexity, Inc. All rights reserved"""

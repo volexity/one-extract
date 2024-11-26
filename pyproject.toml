@@ -3,12 +3,14 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "onenoteextractor"
+name = "one-extract"
 dynamic = ["version"]
 description = "Simple extractor for OneNote files."
 readme = "README.md"
 requires-python = ">=3.8"
-keywords = []
+keywords = [
+  "onenote", "extractor"
+]
 authors = [
   { name = "Threat Intel", email = "threatintel@volexity.com" },
 ]
@@ -29,7 +31,7 @@ dependencies = [
 ]
 
 [project.scripts]
-one-extract = "onenoteextractor.cli:run"
+onenote-extract = "one_extractor.cli:run"
 
 [project.urls]
 Documentation = "https://github.com/volexity/one-extract/blob/main/README.md"
@@ -39,17 +41,8 @@ Source = "https://github.com/volexity/one-extract"
 [envs.hatch-static-analysis]
 config-path = "none"
 
-[tool.coverage.run]
-source_pkgs = ["onenoteextractor", "tests"]
-branch = true
-parallel = true
-omit = [
-  "src/onenoteextractor/_version.py",
-]
-
 [tool.coverage.paths]
-intel_api = ["src/onenoteextractor", "*/one-extract/src/onenoteextractor"]
-tests = ["tests", "*/one-extract/tests"]
+intel_api = ["src/one_extract", "*/one-extract/src/one_extract"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -58,8 +51,16 @@ exclude_lines = [
   "if TYPE_CHECKING:",
 ]
 
+[tool.coverage.run]
+source_pkgs = ["one_extract", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/one_extract/_version.py",
+]
+
 [tool.hatch.build.hooks.vcs]
-version-file = "src/onenoteextractor/_version.py"
+version-file = "src/one_extract/_version.py"
 
 [tool.hatch.envs.default]
 extra-dependencies = [
@@ -67,13 +68,11 @@ extra-dependencies = [
 ]
 
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/onenoteextractor}"
-
+check = "mypy --install-types --non-interactive {args:src/one_extract}"
 
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "none"
-dependencies = ["ruff~=0.5"]
-
+dependencies = ["ruff~=0.8"]
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = []
@@ -86,7 +85,8 @@ source = "vcs"
 
 [[tool.mypy.overrides]]
 module = [
-  "msoffcrypto.*"
+  "msoffcrypto.*",
+  "pytest.*",
 ]
 ignore_missing_imports = true
 
@@ -96,11 +96,8 @@ line-length = 120
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  "ANN101",
-  "ANN102",
   "C901",
   "COM812",
-  "E999",
   "ERA001",
   "FIX001",
   "FIX002",
@@ -109,6 +106,7 @@ ignore = [
   "ISC001",
   "PLR0912",
   "PLR0913",
+  "PLR2004",
   "TD001",
   "TD002",
   "TD003"
@@ -116,20 +114,10 @@ ignore = [
 pydocstyle = { convention = 'google' }
 
 [tool.ruff.lint.per-file-ignores]
-"**/_version.py" = [
-  "D100"
-]
 "**/tests/**/*" = [
-  "ARG001",
-  "D100",
-  "D103",
-  "D104",
-  "PLC1901",
-  "PLR2004",
-  "PLR6301",
+  "D",
   "S",
-  "TID252",
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["onenoteextractor"]
+known-first-party = ["one_extract"]

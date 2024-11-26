@@ -119,7 +119,7 @@ class OneNoteExtractor:
         Returns:
             bool: _description_
         """
-        # !TODO - this is a brittle check that probably could be improved.
+        # TODO: This is a brittle check that probably could be improved.
         return ENC_ONENOTE_MARKER in self.data[0:1000000]
 
     def _get_time(self, date: bytes) -> datetime:

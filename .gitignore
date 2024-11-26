@@ -8,3 +8,9 @@
 __pycache__/
 _version.py
 dist/
+
+# Direnv
+.envrc
+
+# Vim
+*.sw*
