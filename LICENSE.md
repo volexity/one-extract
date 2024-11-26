@@ -1,7 +1,7 @@
 Modified BSD License
 ====================
 
-_Copyright © `2023`, `Volexity, Inc`_  
+_Copyright © `2024`, `Volexity, Inc`_  
 _All rights reserved._
 
 Redistribution and use in source and binary forms, with or without
