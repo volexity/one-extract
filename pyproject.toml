@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [project.scripts]
-onenote-extract = "one_extractor.cli:run"
+onenote-extract = "one_extract.cli:run"
 
 [project.urls]
 Documentation = "https://github.com/volexity/one-extract/blob/main/README.md"
