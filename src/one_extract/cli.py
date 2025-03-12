@@ -32,7 +32,7 @@ def run() -> None:
     parser.add_argument("--extract-files", help="If set, extracts files from .one file", action="store_true")
     parser.add_argument("--output-directory", help="Where should extracted objects be saved to?", default=Path.cwd())
     parser.add_argument(
-        "--password", help="Password to use to extract files from encrypted " "onenote files", action="store"
+        "--password", help="Password to use to extract files from encrypted onenote files", action="store"
     )
     parser.add_argument("--version", action="version", help="print the version of one-extract", version=__version__)
     args = parser.parse_args()
