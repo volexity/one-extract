@@ -72,7 +72,7 @@ check = "mypy --install-types --non-interactive {args:src/one_extract}"
 
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "none"
-dependencies = ["ruff~=0.9"]
+dependencies = ["ruff~=0.12"]
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = []
