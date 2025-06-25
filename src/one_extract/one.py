@@ -164,7 +164,7 @@ class OneNoteExtractor:
         """
         # Find the XML blob containing encryption parameters
         match = re.search(pattern=b"<encryption xmlns=.*</encryption>", string=self.data)
-        enc_config = str(match.group()) if match else ""
+        enc_config = match.group().decode() if match else ""
 
         # Parse the blob and read key parameters
         xml = parseString(enc_config)  # noqa: S318
