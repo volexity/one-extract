@@ -296,5 +296,5 @@ class OneNoteExtractor:
                     )
 
                 except Exception:
-                    logger.exception("Error while parsing object %s", cpt)
+                    logger.exception("Error while parsing object %s", index)
         return
