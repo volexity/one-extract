@@ -23,6 +23,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -72,13 +73,13 @@ check = "mypy --install-types --non-interactive {args:src/one_extract}"
 
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "none"
-dependencies = ["ruff~=0.12"]
+dependencies = ["ruff~=0.14"]
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = []
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.12", "3.11", "3.10", "3.9", "3.8"]
+python = ["3.13", "3.12", "3.11", "3.10", "3.9", "3.8"]
 
 [tool.hatch.version]
 source = "vcs"
